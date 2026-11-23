@@ -27,7 +27,10 @@ function analyze(content, type = 'Text', name = 'Pasted content') {
 }
 
 export default function handler(req, res) {
-  const path = `/${(req.query.path || []).join('/')}`
+  // Vercel's catch-all route may not populate req.query.path for a Vite app,
+  // so derive the endpoint from the request URL as the reliable fallback.
+  const requestPath = new URL(req.url, 'https://promptshield.local').pathname
+  const path = requestPath.replace(/^\/api/, '') || '/'
   if (req.method === 'GET' && path === '/dashboard') return res.status(200).json({ totalScans: scans.length, threatsDetected: scans.filter(s => s.risk !== 'Low').length, threatsBlocked: scans.filter(s => s.status === 'Blocked').length, safeDocuments: scans.filter(s => s.status === 'Safe').length })
   if (req.method === 'GET' && path === '/scans') return res.status(200).json({ records: scans })
   if (req.method === 'POST' && path === '/scans/text') {
